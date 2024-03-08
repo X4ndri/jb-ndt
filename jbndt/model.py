@@ -218,6 +218,8 @@ class NDT(nn.Module):
         x = self.post_encoder_dropout(x)
         # readout
         logrates = self.neural_readout(x)
+        if y is None:
+            return torch.exp(logrates)
         # compute loss
         loss = self.neural_criterion(logrates, y)
         # add behavioral readout and loss too
@@ -235,14 +237,14 @@ class NDT(nn.Module):
 
     
 
-# %%
-from ruamel.yaml import YAML
-config_path = 'config.yaml'
+# # %%
+# from ruamel.yaml import YAML
+# config_path = 'config.yaml'
 
 
-yaml = YAML(typ='safe')
-with open(config_path, 'r') as f:
-    config = yaml.load(f)
+# yaml = YAML(typ='safe')
+# with open(config_path, 'r') as f:
+#     config = yaml.load(f)
 
-model = NDT(config)
-loss, rates = model([0])
+# model = NDT(config)
+# print(torchsummary.summary(model, (config['sequence_length'], config['input_dim'])))

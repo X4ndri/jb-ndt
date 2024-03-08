@@ -1,14 +1,13 @@
-# %%
-from ..jbndt.model import NDT
-
+import sys
+import os
 from ruamel.yaml import YAML
-config_path = 'config.yaml'
+from tests.architecture import *
 
 
+config_path = './config.yaml'
 yaml = YAML(typ='safe')
 with open(config_path, 'r') as f:
     config = yaml.load(f)
 
-model = NDT(config)
-loss, rates = model([0])
-# %%
+
+first_pass(config)
