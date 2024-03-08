@@ -1,0 +1,29 @@
+
+# data params
+input_dim : 142
+sequence_length : 180
+behavioral_dim : 1
+
+
+# mha params
+factor_dim : 64
+head_dim : 32
+num_heads : 2
+num_layers : 4
+mha_dropout : 0.5
+forward_context : 15
+backward_context : 35
+
+# ffn params
+ffn_dim : 200
+ffn_dropout : 0.2
+
+# encoder params
+post_readin_dropout : 0.2
+post_encoder_dropout : 0.2
+post_positional_embedding_dropout : 0.5
+
+# training params
+lr_init : 0.0001
+epochs : 3000
+
