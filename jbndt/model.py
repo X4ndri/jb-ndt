@@ -234,17 +234,3 @@ class NDT(nn.Module):
         #TODO: add held-in held-out functionality?
         #TODO: add different masking strategies?
         pass
-
-    
-
-# # %%
-# from ruamel.yaml import YAML
-# config_path = 'config.yaml'
-
-
-# yaml = YAML(typ='safe')
-# with open(config_path, 'r') as f:
-#     config = yaml.load(f)
-
-# model = NDT(config)
-# print(torchsummary.summary(model, (config['sequence_length'], config['input_dim'])))
