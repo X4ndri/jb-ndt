@@ -1,7 +1,3 @@
-
-#TODO: load nlb data, merge held-in and held-out data to create one dataset.
-#TODO: Write dataloader classes 
-# %%
 from nlb_tools.make_tensors import (make_train_input_tensors,
                                     make_eval_input_tensors,
                                     make_eval_target_tensors,
@@ -15,56 +11,44 @@ import numpy as np
 import logging
 import torch
 import h5py
+import os
 
 logging.basicConfig(level=logging.INFO)
 
-# %%
-dataset_name = 'mc_maze'
-datapath = Path('../datasets/000128/sub-Jenkins').absolute()
+current_directory = os.path.dirname(os.path.abspath(__file__))
+os.chdir(current_directory)
+class train_data_module:
+    def __init__(self, 
+                h5_path=os.path.abspath('../datasets/train_input.h5'), 
+                batch_size=32,
+                device = torch.device('cuda')):
+        
+        self.h5_path = h5_path
+        self.dataset = h5py.File(h5_path, 'r')
+        train_spikes_heldin = self.dataset['train_spikes_heldin'][:]
+        train_spikes_heldout = self.dataset['train_spikes_heldout'][:]
+        train_behavior = self.dataset['train_behavior'][:]
+        self.train_spikes = np.concatenate([train_spikes_heldin, train_spikes_heldout], axis=2)
+        self.train_behavior = train_behavior
+        self.X_train_tensor = torch.tensor(self.train_spikes, dtype=torch.float32).to(device)
+        self.y_train_tensor = torch.tensor(self.train_behavior, dtype=torch.float32).to(device)
+        self.dataset = TensorDataset(self.X_train_tensor, self.y_train_tensor)
+        self.dataloader = DataLoader(self.dataset, batch_size=batch_size, shuffle=True)
 
 
-dataset = NWBDataset(datapath, skip_fields=['joint_ang', 'joint_vel', 'muscle_len'])
-# resample to 5ms
-dataset.resample(5)
-
-train_dict = make_train_input_tensors(dataset,
-                                    dataset_name=dataset_name, 
-                                    trial_split='train', 
-                                    include_behavior=True,
-                                    save_file=True
-                                    )
-test_dict = make_train_input_tensors(dataset,
-                                    dataset_name=dataset_name, 
-                                    trial_split='val', 
-                                    include_behavior=True,
-                                    save_file=True
-                                    )
-# %%
-train_spikes_heldin = train_dict['train_spikes_heldin']
-train_spikes_heldout = train_dict['train_spikes_heldout']
-train_behavior = train_dict['train_behavior'] # x and y vel
-
-test_spikes_heldin = test_dict['train_spikes_heldin']
-test_spikes_heldout = test_dict['train_spikes_heldout']
-test_behavior = test_dict['train_behavior'] # x and y vel
-
-# Scenario 1: merge held-in and held-out data to create one dataset.
-# %%
-# merge held-in and held-out data to create one dataset.
-# neuron 137:end are held-out neurons
-train_spikes = np.concatenate([train_spikes_heldin, train_spikes_heldout], axis=2)
-test_spikes = np.concatenate([test_spikes_heldin, test_spikes_heldout], axis=2)
-# train behavior remains the same
-
-# create data loader
-X_train_tensor = torch.tensor(train_spikes, dtype=torch.float32)
-y_train_tensor = torch.tensor(train_behavior, dtype=torch.float32)
-X_test_tensor = torch.tensor(test_spikes, dtype=torch.float32)
-y_test_tensor = torch.tensor(test_behavior, dtype=torch.float32)
-
-# datasets
-train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
-test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
-
-train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+class test_data_module:
+    def __init__(self,
+                h5_path=os.path.abspath('../datasets/test_input.h5'), 
+                batch_size=32,
+                device = torch.device('cuda')):
+        self.h5_path = h5_path
+        self.dataset = h5py.File(h5_path, 'r')
+        train_spikes_heldin = self.dataset['train_spikes_heldin'][:]
+        train_spikes_heldout = self.dataset['train_spikes_heldout'][:]
+        train_behavior = self.dataset['train_behavior'][:]
+        self.train_spikes = np.concatenate([train_spikes_heldin, train_spikes_heldout], axis=2)
+        self.train_behavior = train_behavior
+        self.X_train_tensor = torch.tensor(self.train_spikes, dtype=torch.float32).to(device)
+        self.y_train_tensor = torch.tensor(self.train_behavior, dtype=torch.float32).to(device)
+        self.dataset = TensorDataset(self.X_train_tensor, self.y_train_tensor)
+        self.dataloader = DataLoader(self.dataset, batch_size=batch_size, shuffle=True)

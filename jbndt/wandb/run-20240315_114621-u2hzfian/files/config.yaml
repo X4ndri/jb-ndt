@@ -1,0 +1,90 @@
+wandb_version: 1
+
+input_dim:
+  desc: null
+  value: 182
+sequence_length:
+  desc: null
+  value: 140
+behavioral_dim:
+  desc: null
+  value: 2
+factor_dim:
+  desc: null
+  value: 64
+head_dim:
+  desc: null
+  value: 32
+num_heads:
+  desc: null
+  value: 2
+num_layers:
+  desc: null
+  value: 4
+mha_dropout:
+  desc: null
+  value: 0.5
+forward_context:
+  desc: null
+  value: 15
+backward_context:
+  desc: null
+  value: 35
+ffn_dim:
+  desc: null
+  value: 128
+ffn_dropout:
+  desc: null
+  value: 0.2
+post_readin_dropout:
+  desc: null
+  value: 0.2
+post_encoder_dropout:
+  desc: null
+  value: 0.2
+post_positional_embedding_dropout:
+  desc: null
+  value: 0.5
+epochs:
+  desc: null
+  value: 1500
+batch_size:
+  desc: null
+  value: 32
+lr_init:
+  desc: null
+  value: 0.0001
+weight_decay:
+  desc: null
+  value: 5.0e-06
+loss_balance_factor:
+  desc: null
+  value: 500000
+_wandb:
+  desc: null
+  value:
+    python_version: 3.7.16
+    cli_version: 0.16.4
+    framework: torch
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1710517581.0
+    t:
+      1:
+      - 1
+      - 5
+      - 53
+      - 55
+      2:
+      - 1
+      - 5
+      - 53
+      - 55
+      3:
+      - 16
+      - 23
+      4: 3.7.16
+      5: 0.16.4
+      8:
+      - 5
+      13: linux-x86_64

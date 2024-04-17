@@ -63,7 +63,7 @@ class MultiHeadAttention(nn.Module):
         self.relu = nn.ReLU()
 
 
-    def attention(self, keys, queries, values, attn_mask):
+    def attention(self, keys, queries, values, attn_mask=None):
         # transpose keys from B x num_heads x T x head_dim to B x num_heads x head_dim x T
         keys = torch.transpose(keys, -1, -2)
 
@@ -76,8 +76,9 @@ class MultiHeadAttention(nn.Module):
 
         attn_scores = torch.matmul(queries, keys) * self.head_scaling
         # attention mask must then have shape: B x 1 x T x T
+
         if attn_mask is not None:
-            attn_scores *= attn_mask
+            attn_scores += attn_mask
         attn_scores = F.softmax(attn_scores, dim=-1)
         attn_scores = self.dropout(attn_scores)
         # values have shape B x num_heads x T x head_dim
@@ -144,10 +145,10 @@ class EncoderLayer(nn.Module):
 
     
 
-    def forward(self, x):
+    def forward(self, x, attn_mask=None):
 
         residual1 = torch.clone(x)
-        out = self.mha(x)
+        out = self.mha(x, attn_mask=attn_mask)
         out = self.mha_dropout(out)
         out += residual1
 
@@ -194,18 +195,21 @@ class NDT(nn.Module):
         # define loss
         self.neural_criterion = nn.PoissonNLLLoss(reduction='none')
         self.behavioral_criterion = nn.MSELoss()
-        # ???????initialize weights and biases???????????
+        self.loss_balance_factor = 1/config['loss_balance_factor']
+        # ???????initialize weights and biases: not sure about ranges???????????
         self.neural_readout.bias.data.zero_()
         self.behavioral_readout.bias.data.zero_()
         self.neural_readout.weight.data.uniform_(-0.1, 0.1)
         self.behavioral_readout.weight.data.uniform_(-0.1, 0.1)
         self.readin.weight.data.uniform_(-0.1, 0.1) 
+
         # cache
         self.cache = None
         self.attn_mask = None
 
     def forward(self, x, y=None):
         # for now, y would contain neural labels and behavioral labels
+        attn_mask = self.create_attention_mask(x)
         x = self.readin(x)
         x = self.post_readin_dropout(x)
         # add positional embeddings
@@ -213,22 +217,40 @@ class NDT(nn.Module):
         x = self.post_positional_embedding_dropout(x)
         # encoder
         for layer in self.encoder:
-            x = layer(x)
+            x = layer(x, attn_mask=attn_mask)
         x = self.ln(x)
         x = self.post_encoder_dropout(x)
         # readout
         logrates = self.neural_readout(x)
+        velocities = self.behavioral_readout(x)
         if y is None:
             return torch.exp(logrates)
         # compute loss
-        loss = self.neural_criterion(logrates, y)
+        neural_loss = self.neural_criterion(logrates, y[0])
+        behavioral_loss = self.behavioral_criterion(velocities, y[1])
+
+        loss = neural_loss.mean() + self.loss_balance_factor*behavioral_loss.mean()
         # add behavioral readout and loss too
-        return loss.mean(), torch.exp(logrates)
+
+        return loss, neural_loss.mean(), behavioral_loss.mean(), torch.exp(logrates), velocities
 
 
-    def create_attention_mask(self):
+    def create_attention_mask(self, data):
         #TODO: implement attention mask with forward and backward context.
-        pass
+        # use cached version if already created.
+        if self.attn_mask != None:
+            return self.attn_mask
+
+        ones = torch.ones(data.size(1), data.size(1), dtype=torch.float32, device=data.device)
+        forw_mask = (torch.triu(ones, diagonal=-self.forward_context) == 1).transpose(0, 1)
+        back_mask = (torch.triu(ones, diagonal=-self.backward_context) == 1)
+        mask = (forw_mask & back_mask).float()
+        mask = mask.masked_fill(mask == 0, float('-inf')).masked_fill(mask == 1, float(0.0))
+        mask = mask.unsqueeze(0)
+        self.attn_mask = mask # cache the mask
+
+        return mask
+
 
     def modify_batch(self):
         #TODO: add held-in held-out functionality?
