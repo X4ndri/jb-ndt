@@ -10,6 +10,10 @@ import wandb
 import torch
 
 SAVE_EVERY_N_EPOCHS = 500
+GPU = 0
+HELDOUT_CHANNEL_SIZE = 40
+torch.cuda.set_device(GPU)
+ 
 config_path = '/home/aabdalq/projects/deeplearning/jbNDT/config.yaml'
 device = torch.device('cuda')
 train_data = train_data_module(device=device)
@@ -44,7 +48,7 @@ ndt.to(device)
 
 # init wandb
 wandb.init(
-    project="jbndt-test1",
+    project="jbndt_cosmoothing",
     config=config
 )
 
@@ -61,7 +65,7 @@ try:
     for epoch in range(config['epochs']):
         ndt.train()
         for i, (X, y) in enumerate(train_data.dataloader):
-            loss, nloss, bloss, logrates, velocities = ndt(X, [X, y], held_out_channels_count=50)
+            loss, nloss, bloss, logrates, velocities = ndt(X, [X, y], held_out_channels_count=HELDOUT_CHANNEL_SIZE)
             loss.backward()
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)

@@ -6,9 +6,9 @@ behavioral_dim : 2
 
 
 # mha params
-factor_dim : 64
+factor_dim : 128
 head_dim : 32
-num_heads : 2
+num_heads : 4
 num_layers : 4
 mha_dropout : 0.5
 forward_context : 15
@@ -24,7 +24,7 @@ post_encoder_dropout : 0.2
 post_positional_embedding_dropout : 0.5
 
 # training params
-epochs : 750
+epochs : 1500
 batch_size : 32
 lr_init : 0.0001
 weight_decay : 0.000005
