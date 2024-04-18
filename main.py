@@ -3,7 +3,7 @@ from sklearn.metrics import r2_score
 from torchsummary import summary
 from jbndt.callbacks import *
 from ruamel.yaml import YAML
-from jbndt.model import NDT
+from jbndt.cosmoothing_model import NDT
 from jbndt.data import *
 from datetime import datetime
 import wandb
@@ -33,15 +33,14 @@ def save_model(model,
         'config': config
     }, filename)
 
-
-
-
+# load config
 yaml = YAML(typ='safe')
 with open(config_path, 'r') as f:
     config = yaml.load(f)
 
 # init model
 ndt = NDT(config)
+ndt.to(device)
 
 # init wandb
 wandb.init(
@@ -55,15 +54,14 @@ optimizer = torch.optim.AdamW(ndt.parameters(),
                               weight_decay = config['weight_decay'])
 # callbacks here
 early_stopping = EarlyStoppingAccuracy(patience=40)
-# move model to device
-ndt.to(device)
+
 
 try:
 
     for epoch in range(config['epochs']):
         ndt.train()
         for i, (X, y) in enumerate(train_data.dataloader):
-            loss, nloss, bloss, logrates, velocities = ndt(X, [X, y])
+            loss, nloss, bloss, logrates, velocities = ndt(X, [X, y], held_out_channels_count=50)
             loss.backward()
             optimizer.step()
             optimizer.zero_grad(set_to_none=True)

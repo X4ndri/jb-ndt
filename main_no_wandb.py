@@ -1,3 +1,7 @@
+""" Train without wandb. Use to test syntax and functionality of the code. Do not use for actual training.
+author: aq
+"""
+
 #%%
 import wandb
 import sys
@@ -5,7 +9,7 @@ import os
 from ruamel.yaml import YAML
 from tests.architecture import *
 from jbndt.data import *
-from jbndt.model import NDT
+from jbndt.cosmoothing_model import NDT
 import torch
 from torchsummary import summary
 from sklearn.metrics import r2_score
@@ -14,8 +18,6 @@ config_path = '/home/aabdalq/projects/deeplearning/jbNDT/config.yaml'
 yaml = YAML(typ='safe')
 with open(config_path, 'r') as f:
     config = yaml.load(f)
-
-
 
 
 device = torch.device('cuda')
@@ -34,7 +36,7 @@ ndt.to(device)
 for epoch in range(config['epochs']):
     ndt.train()
     for i, (X, y) in enumerate(train_data.dataloader):
-        loss, nloss, bloss, logrates, velocities = ndt(X, [X, y])
+        loss, nloss, bloss, logrates, velocities = ndt(X, [X, y], held_out_channels_count=50)
         loss.backward()
         optimizer.step()
         optimizer.zero_grad(set_to_none=True)
@@ -44,7 +46,6 @@ for epoch in range(config['epochs']):
         inferred = velocities.detach().cpu().numpy()
         true = y.detach().cpu().numpy()
         train_r2 = r2_score(true.reshape(-1,2), inferred.reshape(-1,2), multioutput='uniform_average',)
-        print(train_r2)
     
     ndt.eval()
     for i, (X, y) in enumerate(test_data.dataloader):

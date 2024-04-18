@@ -6,7 +6,7 @@ from nlb_tools.make_tensors import (make_train_input_tensors,
                                     make_eval_input_tensors,
                                     make_eval_target_tensors,
                                     save_to_h5)
-from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.data import TensorDataset, Dataset, DataLoader
 from nlb_tools.nwb_interface import NWBDataset
 from nlb_tools.evaluation import evaluate
 from pathlib import Path
@@ -67,4 +67,3 @@ train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
 test_dataset = TensorDataset(X_test_tensor, y_test_tensor)
 batch_size = 32
 train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)

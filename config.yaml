@@ -1,7 +1,7 @@
 
 # data params
 input_dim : 182
-sequence_length : 140
+sequence_length : 180
 behavioral_dim : 2
 
 
