@@ -1,46 +1,58 @@
-
-#TODO: load nlb data, merge held-in and held-out data to create one dataset.
-#TODO: Write dataloader classes 
-# %%
 from nlb_tools.make_tensors import (make_train_input_tensors,
                                     make_eval_input_tensors,
                                     make_eval_target_tensors,
                                     save_to_h5)
+from torch.utils.data import TensorDataset, DataLoader
 from nlb_tools.nwb_interface import NWBDataset
 from nlb_tools.evaluation import evaluate
 from pathlib import Path
 import pandas as pd
 import numpy as np
 import logging
+import torch
 import h5py
+import os
 
 logging.basicConfig(level=logging.INFO)
 
-# %%
-dataset_name = 'mc_maze'
-datapath = Path('../datasets/000128/sub-Jenkins').absolute()
-dataset = NWBDataset(datapath, skip_fields=['joint_ang', 'joint_vel', 'muscle_len'])
-# resample to 5ms
-dataset.resample(5)
+current_directory = os.path.dirname(os.path.abspath(__file__))
+os.chdir(current_directory)
+class train_data_module:
+    def __init__(self, 
+                h5_path=os.path.abspath('../datasets/train_input_with_condition.h5'), 
+                batch_size=32,
+                device = torch.device('cuda')):
+        
+        self.h5_path = h5_path
+        self.data = h5py.File(h5_path, 'r')
+        self.conditions = self.data['conds'][:]
+        
+        recon = self.data['recon_data'][:]
+        vel = self.data['vel'][:]
 
-train_dict = make_train_input_tensors(dataset,
-                                    dataset_name=dataset_name, 
-                                    trial_split='train', 
-                                    include_behavior=True,
-                                    save_file=False
-                                    )
-test_dict = make_train_input_tensors(dataset,
-                                    dataset_name=dataset_name, 
-                                    trial_split='val', 
-                                    include_behavior=True,
-                                    save_file=False
-                                    )
-# %%
-train_spikes_heldin = train_dict['train_spikes_heldin']
-train_spikes_heldout = train_dict['train_spikes_heldout']
-train_behavior = train_dict['train_behavior'] # x and y vel
+        self.X_train_tensor = torch.tensor(recon, dtype=torch.float32).to(device)
+        self.y_train_tensor = torch.tensor(vel, dtype=torch.float32).to(device)
 
-test_spikes_heldin = test_dict['train_spikes_heldin']
-test_spikes_heldout = test_dict['train_spikes_heldout']
-test_behavior = test_dict['train_behavior'] # x and y vel
+        self.dataset = TensorDataset(self.X_train_tensor, self.y_train_tensor)
+        self.dataloader = DataLoader(self.dataset, batch_size=batch_size, shuffle=True)
+
+
+class test_data_module:
+    def __init__(self, 
+                h5_path=os.path.abspath('../datasets/val_input_with_condition.h5'), 
+                batch_size=32,
+                device = torch.device('cuda')):
+        
+        self.h5_path = h5_path
+        self.data = h5py.File(h5_path, 'r')
+        self.conditions = self.data['conds'][:]
+        
+        recon = self.data['recon_data'][:]
+        vel = self.data['vel'][:]
+
+        self.X_train_tensor = torch.tensor(recon, dtype=torch.float32).to(device)
+        self.y_train_tensor = torch.tensor(vel, dtype=torch.float32).to(device)
+
+        self.dataset = TensorDataset(self.X_train_tensor, self.y_train_tensor)
+        self.dataloader = DataLoader(self.dataset, batch_size=batch_size, shuffle=True)
 

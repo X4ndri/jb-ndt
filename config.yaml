@@ -1,8 +1,8 @@
 
 # data params
-input_dim : 142
+input_dim : 182
 sequence_length : 180
-behavioral_dim : 1
+behavioral_dim : 2
 
 
 # mha params
@@ -15,7 +15,7 @@ forward_context : 15
 backward_context : 35
 
 # ffn params
-ffn_dim : 200
+ffn_dim : 128
 ffn_dropout : 0.2
 
 # encoder params
@@ -24,6 +24,8 @@ post_encoder_dropout : 0.2
 post_positional_embedding_dropout : 0.5
 
 # training params
+epochs : 750
+batch_size : 32
 lr_init : 0.0001
-epochs : 3000
-
+weight_decay : 0.000005
+loss_balance_factor : 750000

@@ -1,0 +1,9 @@
+Traceback (most recent call last):
+  File "main.py", line 107, in <module>
+    print('average epoch test loss: ', np.mean(test_losses))
+  File "<__array_function__ internals>", line 6, in mean
+  File "/home/aabdalq/miniconda3/envs/nlb/lib/python3.7/site-packages/numpy/core/fromnumeric.py", line 3420, in mean
+    out=out, **kwargs)
+  File "/home/aabdalq/miniconda3/envs/nlb/lib/python3.7/site-packages/numpy/core/_methods.py", line 190, in _mean
+    ret = ret / rcount
+TypeError: unsupported operand type(s) for /: 'dict' and 'int'

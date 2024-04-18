@@ -1,0 +1,9 @@
+average epoch test loss:  0.82055026
+Epoch 0 train loss: 0.9004945755004883 test loss: 0.8278101086616516
+average epoch test loss:  0.27695775
+Epoch 10 train loss: 0.29722368717193604 test loss: 0.26854801177978516
+average epoch test loss:  0.24447423
+Epoch 20 train loss: 0.25374531745910645 test loss: 0.23527371883392334
+average epoch test loss:  0.23854542
+Epoch 30 train loss: 0.25340619683265686 test loss: 0.22867417335510254
+EARLY STOPPING

@@ -1,0 +1,1 @@
+{"train_batch_loss": 0.8505873680114746, "train_neural_loss": 0.7105339169502258, "train_behavioral_r2": -0.007268812657429846, "train_behavioral_loss": 70026.7265625, "epoch": 0, "_timestamp": 1710517586.848686, "_runtime": 5.319727897644043, "_step": 53, "_wandb": {"runtime": 4}}

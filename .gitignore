@@ -1,1 +1,12 @@
 datasets/
+images/
+*.png
+*.h5
+*.log
+datasets
+checkpoints/
+jbndt/__pycache__/
+jbndt/deprecated/
+jbndt/wandb/
+*.pyc
+**/*.pyc
