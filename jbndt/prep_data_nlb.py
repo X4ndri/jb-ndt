@@ -61,7 +61,7 @@ def create_dataset_and_save_to_disk(dataset, h5_save_path):
         recon_data = torch.cat([heldin_full, heldout_full], dim =2)
 
         # dump to h5
-        filename = h5_save_path.joinpath(f"{trial_split}_input_with_condition.h5").as_posix()
+        filename = h5_save_path.joinpath(f'{trial_split}_input_with_condition.h5').as_posix()
         with h5py.File(filename, 'w') as f:
             f.create_dataset("heldin", data=heldin_full.numpy())
             f.create_dataset("heldout", data=heldout_full.numpy())

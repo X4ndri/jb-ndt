@@ -10,7 +10,7 @@ import wandb
 import torch
 
 SAVE_EVERY_N_EPOCHS = 500
-config_path = '/home/aabdalq/projects/deeplearning/jbNDT/config.yaml'
+config_path = '../sweep.yaml'
 device = torch.device('cuda')
 train_data = train_data_module(device=device)
 test_data = test_data_module(device=device)
@@ -44,8 +44,9 @@ ndt.to(device)
 
 # init wandb
 wandb.init(
-    project="jbndt-test1",
-    config=config
+    project="jbndt-test-anna1",
+    config=config,
+    entity='jbndt'
 )
 
 # optimizer
