@@ -48,6 +48,7 @@ ndt.to(device)
 
 # init wandb
 wandb.init(
+    entity='jbndt',
     project="jbndt_cosmoothing",
     config=config
 )
