@@ -10,10 +10,11 @@ import h5py
 import os
 
 # %%
-model_path = "/home/aabdalq/projects/deeplearning/jbNDT/checkpoints/240417_164959_ndt_model_checkpoint.pth"
-h5_path = os.path.abspath('datasets/train_input_with_condition.h5')
-requested_num_conditions = 5
-requested_num_trials = 10
+# model_path = "/home/aabdalq/projects/deeplearning/jbNDT/checkpoints/240417_164959_ndt_model_checkpoint.pth"
+model_path = "/home/aabdalq/projects/deeplearning/jbNDT/checkpoints/epoch_740_240426_184632_ndt_model_checkpoint.pth"
+h5_path = os.path.abspath('datasets/val_input_with_condition.h5')
+requested_num_conditions = 10
+requested_num_trials = 5
 
 # %%
 # helper functions
@@ -51,6 +52,8 @@ for i in range(len(condition)):
 # select conditions and trials per condition
 true_trials = {}
 selected_conditions = np.random.choice(list(condition_data.keys()), requested_num_conditions, replace=False)
+print('enforcing manual conditions')
+selected_conditions = [21.0, 91.0, 30.0, 98.0,  7.0, 85.0, 73.0, 96.0, 95.0, 78.0]
 print(selected_conditions)
 for cond in selected_conditions:
     selected_trial_indices = np.random.choice(np.arange(len(condition_data[cond])), requested_num_trials, replace=False)
@@ -59,14 +62,14 @@ for cond in selected_conditions:
 inferred_trials = {}
 for cond in selected_conditions:
     inferred_trials[cond] = []
-# pass trials through model
+# pass trials through modellatents_pca_avg
 for cond in selected_conditions:
     for trial in true_trials[cond]:
         n, v = trial
         neural = torch.Tensor(n).unsqueeze(0)
         velocity = torch.Tensor(v).unsqueeze(0)
-        inferred_rates, inferred_velocity = model(neural)
-        inferred_trials[cond].append([inferred_rates.detach().numpy().squeeze(), inferred_velocity.detach().numpy().squeeze()])
+        inferred_rates, inferred_velocity, latents = model(neural)
+        inferred_trials[cond].append([inferred_rates.detach().numpy().squeeze(), inferred_velocity.detach().numpy().squeeze(), latents.detach().numpy().squeeze().squeeze()])
 
 # %%
 # generate an array of unique colors, one for each condition
@@ -90,7 +93,7 @@ for i, cond in enumerate(selected_conditions):
         axs[0].plot(position[:,0], position[:,1], color=colors[i])
 
 for i, cond in enumerate(selected_conditions):
-    for _, v in inferred_trials[cond]:
+    for _, v, _ in inferred_trials[cond]:
         position = np.cumsum(v, axis=0)
         axs[1].plot(position[:,0], position[:,1], color=colors[i])
 
@@ -129,40 +132,68 @@ for cond in selected_conditions:
 # for this, we need all trials per selected condition
 
 # remember, condition_data has all trials [neural, velocity] per condition
-# for each condition, pass all trials through the mode, save the result in a dictionary
+# for each condition, pass all trials through the model, save the result in a dictionary
 selected_conditions_inferred_trials = {}
+all_latents = []
 with torch.no_grad():
     for cond in selected_conditions:
         selected_conditions_inferred_trials[cond] = []
-        for trial in condition_data[cond]:
-            n, v = trial
-            neural = torch.Tensor(n).unsqueeze(0)
-            velocity = torch.Tensor(v).unsqueeze(0)
-            inferred_rates, inferred_velocity = model(neural)
-            selected_conditions_inferred_trials[cond].append([inferred_rates.detach().numpy(), inferred_velocity.detach().numpy().squeeze()])
+        n = np.zeros([len(condition_data[cond]), *condition_data[cond][0][0].shape])
+        v = np.zeros([len(condition_data[cond]), *condition_data[cond][0][1].shape])
+        l = np.zeros([len(condition_data[cond]), *[180, 64]])
+        for i, trial in enumerate(condition_data[cond]):
+            n_, v_ = trial
+            neural = torch.Tensor(n_).unsqueeze(0)
+            velocity = torch.Tensor(v_).unsqueeze(0)
+            inferred_rates, inferred_velocity, latents = model(neural)
+            n[i] = inferred_rates.detach().numpy().squeeze()
+            v[i] = inferred_velocity.detach().numpy().squeeze()
+            l[i] = latents.detach().numpy().squeeze().squeeze()
+        
+        all_latents.append(l)
+        selected_conditions_inferred_trials[cond] = [n, v, l]
 
 # %%
 inferred_psth = {}
+inferred_velocity = {}
+inferred_latents = {}
 for cond in selected_conditions:
-    n = np.zeros([len(selected_conditions_inferred_trials[cond]), *inferred_trials[cond][0][0].shape])
-    for i, t in enumerate(selected_conditions_inferred_trials[cond]):
-        n[i] = np.array([smooth_gaussian(x, 20, 3) for x in t[0]])
-    avg = np.mean(n, 10,3, axis=0)
-    sem = np.std(n, 10,3, axis=0) / np.sqrt(n.shape[0])
-    inferred_psth[cond] = (avg.squeeze(), sem.squeeze())
-# %%
-neuron = 15
+    n, v, _ = selected_conditions_inferred_trials[cond]
+    n_avg = np.mean(n, axis=0)
+    n_sem = np.std(n, axis=0) / np.sqrt(n.shape[0])
+
+    v_avg = np.mean(v, axis=0)
+    v_sem = np.std(v, axis=0) / np.sqrt(v.shape[0])
+
+    inferred_psth[cond] = (n_avg, n_sem)
+    inferred_velocity[cond] = (v_avg, v_sem)
+
+    inferred_psth[cond] = (avg, sem)
+    inferred_velocity[cond] = (avg, sem)
+    inferred_latents[cond] = (avg, sem)
 
 # %%
+#PCA STUFF HERE
+from sklearn.decomposition import PCA
 
-f, axs = plt.subplots(2, 1)
+n_components = 10
+pca = PCA(n_components = n_components)
+x = np.vstack(all_latents)
+x_2d = x.reshape([-1, 64])
+pca.fit(x_2d)
+print(f"EXPLAINED VARIANCE: {pca.explained_variance_ratio_}")
+latents_pca = {}
+for cond in selected_conditions:
+    latents = selected_conditions_inferred_trials[cond][2]
+    latents = latents.reshape([-1, 64])
+    condition_transformed_latents = np.array(pca.transform(latents)).reshape([-1, 180, n_components])
+    latents_pca[cond] = condition_transformed_latents
+latents_pca_avg = {}
+for cond in selected_conditions:
+    avg_latents = np.mean(latents_pca[cond], axis=0)
+    latents_pca_avg[cond] = avg_latents
 
-for i, cond in enumerate(selected_conditions[:3]):
-    avgi, semi = inferred_psth[cond]
-    avgt, semt = true_psth[cond]
-    axs[0].plot(smooth_gaussian(avgi[:,neuron], 20, 3), color=colors[i])
-    axs[1].plot(smooth_gaussian(avgt[:,neuron], 20, 3), color=colors[i])
-
-# %%
-a = smooth_gaussian(ni[:,neuron], 10, 3)
+for i, cond in enumerate(selected_conditions):
+    l_ = latents_pca_avg[cond]
+    plt.plot(l_[:,2], l_[:,4], color = colors[i])
 # %%

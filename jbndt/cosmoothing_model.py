@@ -246,7 +246,7 @@ class NDT(nn.Module):
         logrates = self.neural_readout(x)
         velocities = self.behavioral_readout(x)
         if y is None:
-            return torch.exp(logrates), velocities
+            return torch.exp(logrates), velocities, x
         # compute loss
         neural_loss = self.neural_criterion(logrates, y[0])
         behavioral_loss = self.behavioral_criterion(velocities, y[1])

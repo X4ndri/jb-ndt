@@ -1,0 +1,53 @@
+name: "single_model"
+method: "random"
+parameters:
+  input_dim:
+    values: [182]
+  sequence_length:
+    values: [180]
+  behavioral_dim:
+    values: [2]
+
+
+  factor_dim:
+    values: [64]
+  head_dim:
+    values: [16]
+  num_heads:
+    values: [4]
+  num_layers:
+    values: [4]
+  mha_dropout:
+    values: [0.2]
+  forward_context:
+    values: [15]
+  backward_context:
+    values: [35]
+
+  ffn_dim:
+    values: [64]
+  ffn_dropout:
+    values: [0.2]
+
+  post_readin_dropout:
+    values: [0.2]
+  post_encoder_dropout:
+    values: [0.2]
+  post_positional_embedding_dropout:
+    values: [0.5]
+
+
+  epochs:
+    values: [750]
+  batch_size:
+    values: [32]
+  weight_decay:
+    values: [0.00005]
+  loss_balance_factor:
+    values: [500000]
+  lr_init:
+    values: [0.001]
+
+metric:
+  name: "test_behavioral_r2"
+  goal: "maximize"
