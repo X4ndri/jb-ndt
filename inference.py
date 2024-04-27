@@ -62,7 +62,7 @@ for cond in selected_conditions:
 inferred_trials = {}
 for cond in selected_conditions:
     inferred_trials[cond] = []
-# pass trials through modellatents_pca_avg
+# pass trials through model
 for cond in selected_conditions:
     for trial in true_trials[cond]:
         n, v = trial
@@ -87,7 +87,6 @@ for i, cond in enumerate(selected_conditions):
         # integrate velocity to get position
         position = np.cumsum(v, axis=0)
         if j == requested_num_trials - 2:
-            print('yee')
             axs[0].plot(position[:,0], position[:,1], color=colors[i], label=str(cond))
             continue
         axs[0].plot(position[:,0], position[:,1], color=colors[i])
@@ -121,7 +120,10 @@ true_psth = {}
 for cond in selected_conditions:
     n = np.zeros([requested_num_trials, *true_trials[cond][0][0].shape])
     for i, t in enumerate(true_trials[cond]):
-        n[i] = t[0]
+        # smooth 
+        x = np.array([smooth_gaussian(t[0][:,i], 20, 5) for i in range(t[0].shape[1])]).T
+        n[i] = x
+
     avg = np.mean(n, axis=0)
     sem = np.std(n, axis=0) / np.sqrt(n.shape[0])
     true_psth[cond] = (avg, sem)
@@ -146,7 +148,9 @@ with torch.no_grad():
             neural = torch.Tensor(n_).unsqueeze(0)
             velocity = torch.Tensor(v_).unsqueeze(0)
             inferred_rates, inferred_velocity, latents = model(neural)
-            n[i] = inferred_rates.detach().numpy().squeeze()
+            inferred_rates = inferred_rates.detach().numpy().squeeze()
+            smoothed_inferred_rates = np.array([smooth_gaussian(inferred_rates[:,i], 20, 5) for i in range(inferred_rates.shape[1])]).T
+            n[i] = smoothed_inferred_rates
             v[i] = inferred_velocity.detach().numpy().squeeze()
             l[i] = latents.detach().numpy().squeeze().squeeze()
         
@@ -168,9 +172,22 @@ for cond in selected_conditions:
     inferred_psth[cond] = (n_avg, n_sem)
     inferred_velocity[cond] = (v_avg, v_sem)
 
-    inferred_psth[cond] = (avg, sem)
-    inferred_velocity[cond] = (avg, sem)
-    inferred_latents[cond] = (avg, sem)
+
+# %%
+# plot PSTHs
+
+# neuron 48, 63, 72
+neuron = 77
+f, axs = plt.subplots(requested_num_conditions, 1, figsize=(5, 10), sharey=True, sharex=True)
+for i, cond in enumerate(selected_conditions):
+    avg, sem = true_psth[cond]
+    axs[i].plot(avg[:,neuron], color='black', label='True')
+    axs[i].fill_between(np.arange(avg.shape[0]), avg[:,neuron] - sem[:,neuron], avg[:,neuron] + sem[:,neuron], color='black', alpha=0.5)
+    
+    avg, sem = inferred_psth[cond]
+    axs[i].plot(avg[:,neuron], color=colors[i], label='Inferred')
+    axs[i].fill_between(np.arange(avg.shape[0]), avg[:,neuron] - sem[:,neuron], avg[:,neuron] + sem[:,neuron], color=colors[i], alpha=0.5)
+
 
 # %%
 #PCA STUFF HERE
