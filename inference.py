@@ -102,14 +102,6 @@ plt.tight_layout
 
 
 
-
-
-
-
-
-
-
-
 # %%
 ###############################################
 #               Generate PSTHs
@@ -176,8 +168,10 @@ for cond in selected_conditions:
 # %%
 # plot PSTHs
 
-# neuron 48, 63, 72
-neuron = 77
+# GOOD NEURONS:
+# neuron 48, 63, 72, 77, 84, 85, 86, 87, 89, 98
+# heldout: -26, -38, -17, -11
+neuron = -17
 f, axs = plt.subplots(requested_num_conditions, 1, figsize=(5, 10), sharey=True, sharex=True)
 for i, cond in enumerate(selected_conditions):
     avg, sem = true_psth[cond]
